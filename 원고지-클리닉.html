@@ -1,0 +1,978 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>원고지 클리닉</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Noto+Serif+KR:wght@400;500;600;700;900&family=Pretendard:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  * { box-sizing: border-box; }
+  :root{
+    --paper: #F3EEE2;
+    --paper-deep: #EAE3D2;
+    --ink: #221F1A;
+    --ink-soft: #6B6152;
+    --line: #C9BFA8;
+    --line-strong: #A79B80;
+    --red: #B23A2E;
+    --red-soft: rgba(178,58,46,0.12);
+  }
+  html,body{
+    margin:0; padding:0;
+    background: var(--paper);
+    background-image:
+      radial-gradient(circle at 15% 8%, rgba(178,58,46,0.05), transparent 40%),
+      radial-gradient(circle at 90% 90%, rgba(178,58,46,0.04), transparent 35%);
+    color: var(--ink);
+    font-family: 'Pretendard', -apple-system, sans-serif;
+    -webkit-font-smoothing: antialiased;
+  }
+  .wrap{ max-width: 980px; margin: 0 auto; padding: 28px 16px 80px; }
+
+  /* Masthead */
+  .masthead{
+    border-top: 3px solid var(--ink);
+    border-bottom: 1px solid var(--ink);
+    padding: 18px 4px 14px;
+    margin-bottom: 26px;
+    position: relative;
+  }
+  .masthead .kicker{
+    font-size: 11px;
+    letter-spacing: 0.28em;
+    color: var(--red);
+    font-weight: 600;
+    margin-bottom: 6px;
+  }
+  .masthead h1{
+    font-family: 'Noto Serif KR', serif;
+    font-weight: 900;
+    font-size: clamp(28px, 6vw, 44px);
+    margin: 0 0 6px;
+    letter-spacing: -0.01em;
+  }
+  .masthead p{
+    margin:0;
+    color: var(--ink-soft);
+    font-size: 13.5px;
+    line-height: 1.6;
+    max-width: 560px;
+  }
+
+  /* Input card */
+  .panel{
+    background: #fff;
+    border: 1px solid var(--line);
+    border-radius: 4px;
+    padding: 16px;
+    margin-bottom: 22px;
+    box-shadow: 0 1px 0 rgba(0,0,0,0.02);
+  }
+  .panel-label{
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.14em;
+    color: var(--ink-soft);
+    margin-bottom: 8px;
+    display:flex; align-items:center; gap:8px;
+  }
+  .panel-label::before{
+    content:"";
+    width:6px; height:6px;
+    background: var(--red);
+    border-radius: 50%;
+    display:inline-block;
+  }
+  textarea{
+    width:100%;
+    min-height: 130px;
+    border: none;
+    outline: none;
+    resize: vertical;
+    font-family: 'Noto Serif KR', serif;
+    font-size: 15px;
+    line-height: 1.9;
+    color: var(--ink);
+    background: transparent;
+  }
+  .hint{
+    font-size: 12px;
+    color: var(--ink-soft);
+    margin-top: 8px;
+    border-top: 1px dashed var(--line);
+    padding-top: 8px;
+  }
+
+  /* Stats row */
+  .stats{
+    display:flex; gap: 10px; flex-wrap: wrap;
+    margin-bottom: 22px;
+  }
+  .stat{
+    background: #fff;
+    border: 1px solid var(--line);
+    border-radius: 4px;
+    padding: 10px 14px;
+    flex: 1 1 120px;
+    min-width: 100px;
+  }
+  .stat .n{
+    font-family: 'Noto Serif KR', serif;
+    font-size: 22px;
+    font-weight: 700;
+  }
+  .stat .l{
+    font-size: 11px;
+    color: var(--ink-soft);
+    margin-top: 2px;
+  }
+
+  /* Sheets */
+  .sheet{
+    background: #fff;
+    border: 1px solid var(--line-strong);
+    border-radius: 2px;
+    padding: 14px 14px 10px;
+    margin-bottom: 22px;
+    position: relative;
+    box-shadow: 0 2px 6px rgba(80,60,30,0.06);
+    overflow-x: auto;
+  }
+  .grid{
+    display: grid;
+    grid-template-columns: repeat(20, minmax(20px, 1fr));
+    width: max(560px, 100%);
+    border-top: 1px solid var(--line);
+    border-left: 1px solid var(--line);
+  }
+  .cell{
+    aspect-ratio: 1;
+    border-right: 1px solid var(--line);
+    border-bottom: 1px solid var(--line);
+    display:flex; align-items:center; justify-content:center;
+    position: relative;
+    font-family: 'Noto Serif KR', serif;
+    font-size: clamp(11px, 1.9vw, 16px);
+    font-weight: 500;
+    color: var(--ink);
+  }
+  .cell.indent{ background: repeating-linear-gradient(135deg, rgba(178,58,46,0.05) 0 4px, transparent 4px 8px); }
+  .cell .pair{ font-size: 0.62em; letter-spacing: -0.5px; }
+  .cell .dot{
+    position:absolute; top:3px; right:3px;
+    width:4px; height:4px; border-radius:50%;
+    background: var(--red); opacity: 0.55;
+  }
+  .cell .caret{
+    position:absolute; top:-9px; right:-1px;
+    font-size: 10px; color: var(--red); font-weight: 700;
+  }
+  .sheet-foot{
+    text-align:center;
+    font-size: 11px;
+    color: var(--ink-soft);
+    letter-spacing: 0.1em;
+    margin-top: 10px;
+  }
+  .sheet-head{
+    display:flex; justify-content:flex-end;
+    font-size: 11px; color: var(--red); font-weight:700;
+    letter-spacing: 0.05em; margin-bottom: 6px;
+  }
+
+  /* Mode toggle */
+  .mode-toggle{
+    display:flex; gap:8px; margin-bottom: 18px;
+  }
+  .mode-btn{
+    flex:1;
+    border: 1px solid var(--line-strong);
+    background: #fff;
+    color: var(--ink-soft);
+    font-family: 'Pretendard', sans-serif;
+    font-weight: 700;
+    font-size: 12.5px;
+    padding: 11px 10px;
+    border-radius: 4px;
+    cursor: pointer;
+    letter-spacing: 0.02em;
+  }
+  .mode-btn.active{
+    background: var(--ink);
+    color: #fff;
+    border-color: var(--ink);
+  }
+
+  /* Trace toolbar */
+  .toolbar{
+    display:flex; align-items:center; gap: 10px;
+    flex-wrap: wrap;
+    background: #fff;
+    border: 1px solid var(--line);
+    border-radius: 4px;
+    padding: 10px 12px;
+    margin-bottom: 18px;
+  }
+  .toolbar .grp{ display:flex; align-items:center; gap:6px; }
+  .toolbar label{ font-size: 11px; color: var(--ink-soft); font-weight:600; }
+  .tool-btn{
+    border: 1px solid var(--line-strong);
+    background: var(--paper);
+    color: var(--ink);
+    font-size: 12px; font-weight:600;
+    padding: 7px 11px;
+    border-radius: 4px;
+    cursor: pointer;
+  }
+  .tool-btn.active{ background: var(--ink); color:#fff; border-color: var(--ink); }
+  .tool-btn.danger{ color: var(--red); border-color: var(--red); background:#fff; }
+  .swatch{
+    width:20px; height:20px; border-radius:50%;
+    border: 2px solid transparent;
+    cursor:pointer;
+  }
+  .swatch.selected{ border-color: var(--ink); }
+  .swatch.ink{ background:#221F1A; }
+  .swatch.pencil{ background:#5B6B8C; }
+  .swatch.redpen{ background:#B23A2E; }
+  input[type="range"]{ width: 80px; }
+
+  /* Trace canvas layers */
+  .canvas-wrap{
+    position: relative;
+    width: max(560px, 100%);
+    aspect-ratio: 2 / 1;
+    touch-action: none;
+  }
+  .canvas-wrap canvas{
+    position:absolute; inset:0;
+    width:100%; height:100%;
+    display:block;
+  }
+  .canvas-wrap canvas.ink-layer{ cursor: crosshair; }
+
+  /* Notes / rules panel */
+  .notes-title{
+    font-family:'Noto Serif KR', serif;
+    font-weight: 700;
+    font-size: 17px;
+    margin: 0 0 12px;
+    display:flex; align-items:center; gap: 8px;
+  }
+  .notes-title .badge{
+    background: var(--red);
+    color:#fff;
+    font-size: 10px;
+    font-weight:700;
+    padding: 3px 7px;
+    border-radius: 3px;
+    letter-spacing: 0.05em;
+  }
+  .note-list{ list-style:none; margin:0; padding:0; }
+  .note-item{
+    display:flex; gap: 10px;
+    padding: 9px 0;
+    border-bottom: 1px dashed var(--line);
+    font-size: 13px;
+    line-height: 1.55;
+  }
+  .note-item:last-child{ border-bottom:none; }
+  .mark{
+    flex: 0 0 26px;
+    font-family: 'Noto Serif KR', serif;
+    color: var(--red);
+    font-weight: 700;
+    text-align:center;
+    font-size: 14px;
+  }
+  .note-item.warn{ background: var(--red-soft); border-radius: 3px; padding: 9px 8px; }
+  .note-item.warn .mark{ color: var(--red); }
+  .note-item b{ color: var(--ink); }
+  .note-item .sub{ color: var(--ink-soft); font-size: 12px; margin-top:2px; }
+
+  .legend{
+    display:flex; flex-wrap:wrap; gap: 14px;
+    font-size: 11.5px; color: var(--ink-soft);
+    margin-top: 6px; padding-top: 10px; border-top: 1px solid var(--line);
+  }
+  .legend span{ display:flex; align-items:center; gap:5px; }
+  .legend i{
+    width:10px; height:10px; display:inline-block;
+    border: 1px solid var(--line-strong); position:relative;
+  }
+  .legend i.ind{ background: repeating-linear-gradient(135deg, rgba(178,58,46,0.12) 0 3px, transparent 3px 6px); }
+  .legend i.dot::after{ content:""; position:absolute; top:1px; right:1px; width:3px;height:3px;border-radius:50%; background:var(--red); }
+
+  footer{
+    text-align:center; font-size:11px; color: var(--ink-soft);
+    margin-top: 30px; letter-spacing: 0.05em;
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <div class="masthead">
+    <div class="kicker">MANUSCRIPT PAPER · 원고지 작성법</div>
+    <h1>원고지 클리닉</h1>
+    <p>평소처럼 편하게 쓰면, 실제 원고지 칸에 맞춰 자동으로 앉혀 드립니다. 들여쓰기·문장부호·숫자 표기 규칙이 어떻게 적용됐는지 칸마다 확인해 보세요.</p>
+  </div>
+
+  <div class="panel">
+    <div class="panel-label">원고 입력</div>
+    <textarea id="input" placeholder="여기에 평소처럼 글을 쓰세요. 문단을 나눌 때는 Enter로 줄을 바꾸면 됩니다.
+
+예)
+저는 어릴 적부터 글쓰기를 좋아했다.
+2026년 여름, 나는 원고지 앞에 다시 앉았다."></textarea>
+    <div class="hint">띄어쓰기·문단 구분만 평소대로 입력하면 됩니다. 첫 칸 들여쓰기, 숫자·알파벳 두 자씩 묶기, 물음표·느낌표 뒤 칸 비우기, 따옴표 안 첫 칸 비우기, 줄임표·마침표+따옴표 처리까지 자동으로 반영됩니다.</div>
+  </div>
+
+  <div class="stats" id="stats"></div>
+
+  <div class="mode-toggle">
+    <button class="mode-btn active" id="modeCheckBtn">확인 모드 · 자동 배치 보기</button>
+    <button class="mode-btn" id="modeTraceBtn">연습장 모드 · 펜으로 따라 쓰기</button>
+  </div>
+
+  <div class="toolbar" id="toolbar" style="display:none;">
+    <div class="grp">
+      <label>색</label>
+      <span class="swatch ink selected" data-color="#221F1A" title="검정 펜"></span>
+      <span class="swatch pencil" data-color="#5B6B8C" title="연필"></span>
+      <span class="swatch redpen" data-color="#B23A2E" title="빨간 펜"></span>
+    </div>
+    <div class="grp">
+      <label>굵기</label>
+      <input type="range" id="widthRange" min="1" max="6" value="2.5" step="0.5">
+    </div>
+    <div class="grp">
+      <button class="tool-btn" id="eraserBtn">지우개</button>
+      <button class="tool-btn" id="undoBtn">되돌리기</button>
+      <button class="tool-btn danger" id="clearBtn">이 장 지우기</button>
+    </div>
+  </div>
+  <div class="hint" id="traceHint" style="display:none; margin: -10px 0 18px; background:#fff; border:1px solid var(--line); border-radius:4px; padding:10px 12px;">
+    옅은 회색 글씨를 따라 펜으로 써보세요. 펜을 쓰는 동안 손바닥 터치는 자동으로 무시됩니다. 문장을 다시 고치면 아래 글씨가 바뀌니, 먼저 문장을 정한 뒤 연습해 주세요.
+  </div>
+
+  <div id="sheets"></div>
+
+  <div class="panel" id="notesPanel">
+    <div class="notes-title">첨삭 노트 <span class="badge">RED PEN</span></div>
+    <ul class="note-list" id="notes"></ul>
+    <div class="legend">
+      <span><i class="ind"></i> 문단 시작 (첫 칸 비움)</span>
+      <span><i class="dot"></i> 규칙에 따라 자동으로 비운 칸</span>
+      <span>∨ 줄 끝 띄어쓰기 표시</span>
+    </div>
+  </div>
+
+  <footer>20자 × 10행 = 200자 원고지 기준 · 문교부 표준 원고지 작성법 참고</footer>
+</div>
+
+<script>
+const COLS = 20;
+const ROWS_PER_SHEET = 10;
+const CELL_PX = 44; // logical px per cell inside the trace canvas
+
+let mode = 'check'; // 'check' | 'trace'
+let penColor = '#221F1A';
+let penWidth = 2.5;
+let eraserOn = false;
+const sheetStrokes = {};   // { [sheetIndex]: [ {color,width,points:[{x,y,p}]} , ... ] }
+const activePens = new Set();
+let lastPenTime = 0;
+let currentStroke = null;
+let activeCanvas = null;
+
+const hasStorage = typeof window !== 'undefined' && !!window.storage;
+
+async function loadStrokes(sheetIndex){
+  if(!hasStorage) return [];
+  try{
+    const res = await window.storage.get('ink-sheet-' + sheetIndex);
+    return res && res.value ? JSON.parse(res.value) : [];
+  }catch(e){
+    return [];
+  }
+}
+
+let saveTimer = null;
+function scheduleSave(sheetIndex){
+  if(!hasStorage) return;
+  clearTimeout(saveTimer);
+  saveTimer = setTimeout(async () => {
+    try{
+      await window.storage.set('ink-sheet-' + sheetIndex, JSON.stringify(sheetStrokes[sheetIndex] || []));
+    }catch(e){ /* ignore save errors */ }
+  }, 400);
+}
+
+function shouldRejectTouch(pointerType){
+  if(pointerType !== 'touch') return false;
+  if(activePens.size > 0) return true;
+  if(Date.now() - lastPenTime < 700) return true;
+  return false;
+}
+
+function drawGuideGrid(ctx, sheetRows){
+  ctx.clearRect(0, 0, COLS*CELL_PX, ROWS_PER_SHEET*CELL_PX);
+  ctx.strokeStyle = '#C9BFA8';
+  ctx.lineWidth = 1;
+  for(let c=0; c<=COLS; c++){
+    ctx.beginPath();
+    ctx.moveTo(c*CELL_PX + 0.5, 0);
+    ctx.lineTo(c*CELL_PX + 0.5, ROWS_PER_SHEET*CELL_PX);
+    ctx.stroke();
+  }
+  for(let r=0; r<=ROWS_PER_SHEET; r++){
+    ctx.beginPath();
+    ctx.moveTo(0, r*CELL_PX + 0.5);
+    ctx.lineTo(COLS*CELL_PX, r*CELL_PX + 0.5);
+    ctx.stroke();
+  }
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
+  for(let r=0; r<ROWS_PER_SHEET; r++){
+    const rowData = sheetRows[r] || [];
+    for(let c=0; c<COLS; c++){
+      const cell = rowData[c];
+      const cx = c*CELL_PX + CELL_PX/2;
+      const cy = r*CELL_PX + CELL_PX/2;
+      if(cell && cell.indent){
+        ctx.fillStyle = 'rgba(178,58,46,0.06)';
+        ctx.fillRect(c*CELL_PX, r*CELL_PX, CELL_PX, CELL_PX);
+      }
+      if(cell && cell.text){
+        ctx.fillStyle = 'rgba(34,31,26,0.28)';
+        ctx.font = (cell.wide ? Math.floor(CELL_PX*0.34) : Math.floor(CELL_PX*0.62)) + 'px "Noto Serif KR", serif';
+        ctx.fillText(cell.text, cx, cy + 1);
+      }
+      if(cell && cell.ruleDot){
+        ctx.fillStyle = 'rgba(178,58,46,0.5)';
+        ctx.beginPath();
+        ctx.arc(c*CELL_PX + CELL_PX - 6, r*CELL_PX + 6, 2, 0, Math.PI*2);
+        ctx.fill();
+      }
+      if(cell && cell.caret){
+        ctx.fillStyle = 'rgba(178,58,46,0.6)';
+        ctx.font = Math.floor(CELL_PX*0.3) + 'px sans-serif';
+        ctx.fillText('∨', c*CELL_PX + CELL_PX - 8, r*CELL_PX + 8);
+      }
+    }
+  }
+}
+
+function drawStrokes(ctx, strokes){
+  ctx.clearRect(0, 0, COLS*CELL_PX, ROWS_PER_SHEET*CELL_PX);
+  ctx.lineCap = 'round';
+  ctx.lineJoin = 'round';
+  for(const stroke of strokes){
+    if(!stroke.points.length) continue;
+    ctx.strokeStyle = stroke.color;
+    for(let i=1; i<stroke.points.length; i++){
+      const p0 = stroke.points[i-1];
+      const p1 = stroke.points[i];
+      ctx.lineWidth = Math.max(1, stroke.width * (0.5 + (p1.p||0.5)));
+      ctx.beginPath();
+      ctx.moveTo(p0.x, p0.y);
+      ctx.lineTo(p1.x, p1.y);
+      ctx.stroke();
+    }
+    if(stroke.points.length === 1){
+      const p = stroke.points[0];
+      ctx.fillStyle = stroke.color;
+      ctx.beginPath();
+      ctx.arc(p.x, p.y, Math.max(1, stroke.width*0.6), 0, Math.PI*2);
+      ctx.fill();
+    }
+  }
+}
+
+function eraseNear(sheetIndex, x, y, radius){
+  const strokes = sheetStrokes[sheetIndex] || [];
+  sheetStrokes[sheetIndex] = strokes.filter(s => !s.points.some(p => Math.hypot(p.x-x, p.y-y) < radius));
+}
+
+function setupCanvasWrap(sheetIndex, sheetRows){
+  const wrap = document.createElement('div');
+  wrap.className = 'canvas-wrap';
+
+  const bgCanvas = document.createElement('canvas');
+  bgCanvas.width = COLS*CELL_PX;
+  bgCanvas.height = ROWS_PER_SHEET*CELL_PX;
+
+  const inkCanvas = document.createElement('canvas');
+  inkCanvas.className = 'ink-layer';
+  inkCanvas.width = COLS*CELL_PX;
+  inkCanvas.height = ROWS_PER_SHEET*CELL_PX;
+
+  wrap.appendChild(bgCanvas);
+  wrap.appendChild(inkCanvas);
+
+  const bgCtx = bgCanvas.getContext('2d');
+  const inkCtx = inkCanvas.getContext('2d');
+  drawGuideGrid(bgCtx, sheetRows);
+
+  if(!sheetStrokes[sheetIndex]){
+    sheetStrokes[sheetIndex] = [];
+    loadStrokes(sheetIndex).then(strokes => {
+      sheetStrokes[sheetIndex] = strokes;
+      drawStrokes(inkCtx, sheetStrokes[sheetIndex]);
+    });
+  } else {
+    drawStrokes(inkCtx, sheetStrokes[sheetIndex]);
+  }
+
+  function getPos(e){
+    const rect = inkCanvas.getBoundingClientRect();
+    const scaleX = (COLS*CELL_PX) / rect.width;
+    const scaleY = (ROWS_PER_SHEET*CELL_PX) / rect.height;
+    return { x: (e.clientX-rect.left)*scaleX, y: (e.clientY-rect.top)*scaleY, p: e.pressure || 0.5 };
+  }
+
+  function ctxDrawLive(ctx, stroke){
+    ctx.strokeStyle = stroke.color;
+    ctx.lineCap = 'round'; ctx.lineJoin = 'round';
+    for(let i=1; i<stroke.points.length; i++){
+      const p0 = stroke.points[i-1], p1 = stroke.points[i];
+      ctx.lineWidth = Math.max(1, stroke.width * (0.5 + (p1.p||0.5)));
+      ctx.beginPath(); ctx.moveTo(p0.x,p0.y); ctx.lineTo(p1.x,p1.y); ctx.stroke();
+    }
+  }
+
+  inkCanvas.addEventListener('pointerdown', (e) => {
+    if(shouldRejectTouch(e.pointerType)){ e.preventDefault(); return; }
+    if(e.pointerType === 'pen') activePens.add(e.pointerId);
+    inkCanvas.setPointerCapture(e.pointerId);
+    const pos = getPos(e);
+    if(eraserOn){
+      eraseNear(sheetIndex, pos.x, pos.y, 14);
+      drawStrokes(inkCtx, sheetStrokes[sheetIndex]);
+      scheduleSave(sheetIndex);
+      return;
+    }
+    currentStroke = { color: penColor, width: penWidth, points: [pos] };
+    activeCanvas = inkCanvas;
+  });
+
+  inkCanvas.addEventListener('pointermove', (e) => {
+    if(shouldRejectTouch(e.pointerType)) return;
+    const pos = getPos(e);
+    if(eraserOn){
+      if(e.buttons === 0) return;
+      eraseNear(sheetIndex, pos.x, pos.y, 14);
+      drawStrokes(inkCtx, sheetStrokes[sheetIndex]);
+      return;
+    }
+    if(!currentStroke || activeCanvas !== inkCanvas) return;
+    currentStroke.points.push(pos);
+    drawStrokes(inkCtx, sheetStrokes[sheetIndex]);
+    ctxDrawLive(inkCtx, currentStroke);
+  });
+
+  function endStroke(e){
+    if(e.pointerType === 'pen'){ activePens.delete(e.pointerId); lastPenTime = Date.now(); }
+    if(currentStroke && activeCanvas === inkCanvas && currentStroke.points.length){
+      sheetStrokes[sheetIndex].push(currentStroke);
+      scheduleSave(sheetIndex);
+    }
+    currentStroke = null;
+    activeCanvas = null;
+  }
+  inkCanvas.addEventListener('pointerup', endStroke);
+  inkCanvas.addEventListener('pointercancel', endStroke);
+  inkCanvas.addEventListener('pointerleave', (e) => { if(e.buttons===0) endStroke(e); });
+
+  wrap._sheetIndex = sheetIndex;
+  wrap._inkCtx = inkCtx;
+  return wrap;
+}
+
+function isDigitOrLower(ch){ return /[0-9a-z]/.test(ch); }
+function isEndPunct(ch){ return ch === '?' || ch === '!'; }
+function quoteKind(ch){
+  if(ch === '"' || ch === '“' || ch === '”') return 'double';
+  if(ch === "'" || ch === '‘' || ch === '’') return 'single';
+  return null;
+}
+
+function tokenizeLine(line){
+  // Pass 1: split into raw tokens, grouping digit/lowercase runs (2/cell) and dot-runs of 3+ (ellipsis, 3/cell).
+  const raw = [];
+  let i = 0;
+  while(i < line.length){
+    const ch = line[i];
+    if(ch === '.' ){
+      let run = '';
+      while(i < line.length && line[i] === '.'){ run += line[i]; i++; }
+      if(run.length >= 3){
+        // 줄임표: 항상 점 6개(한 칸에 3개씩, 두 칸)로 통일하고 끝에 마침표를 찍는다.
+        raw.push({ text: '...', wide:true, ellipsis:true });
+        raw.push({ text: '...', wide:true, ellipsis:true });
+        raw.push({ text: '.', isPeriodComma:true, ellipsisEnd:true });
+      } else {
+        for(const c of run) raw.push({ text: c, isPeriodComma:true });
+      }
+    } else if(isDigitOrLower(ch)){
+      let run = '';
+      while(i < line.length && isDigitOrLower(line[i])){ run += line[i]; i++; }
+      for(let j=0; j<run.length; j+=2){
+        const pair = run.slice(j, j+2);
+        raw.push({ text: pair, wide: pair.length === 2 });
+      }
+    } else {
+      const qk = quoteKind(ch);
+      raw.push({
+        text: ch,
+        isPeriodComma: ch === ',',
+        isEndPunct: isEndPunct(ch),
+        quoteToggle: qk,
+        isSpace: ch === ' '
+      });
+      i++;
+    }
+  }
+  // Pass 2: merge a period/comma immediately followed by a closing quote into one cell.
+  const merged = [];
+  for(let k=0; k<raw.length; k++){
+    const t = raw[k];
+    const next = raw[k+1];
+    if(t.isPeriodComma && next && next.quoteToggle && !next.wide){
+      merged.push({ text: t.text + next.text, wide:true, quoteToggle: next.quoteToggle, merged:true, isPeriodComma:true });
+      k++; // skip the quote, already consumed
+    } else {
+      merged.push(t);
+    }
+  }
+  // Pass 3: 마침표·쉼표·물음표·느낌표 바로 뒤에 오는 띄어쓰기는 칸을 만들지 않는다
+  // (마침표·쉼표는 원래 다음 칸을 안 비우고, 물음표·느낌표는 규칙에 따라 이미 자동으로 빈 칸이 붙기 때문).
+  const tokens = [];
+  for(let k=0; k<merged.length; k++){
+    const t = merged[k];
+    if(t.isSpace && tokens.length){
+      const prev = tokens[tokens.length-1];
+      if(prev.isPeriodComma || prev.isEndPunct) continue; // drop this space
+    }
+    tokens.push(t);
+  }
+  return tokens;
+}
+
+function layout(rawText){
+  const rows = [];
+  let currentRow = null;
+  let col = 0;
+  let manualIndentFound = false;
+  let doubleSpaceFound = false;
+  let dialogueFound = false;
+  let totalChars = 0;
+  let insideDouble = false;
+  let insideSingle = false;
+
+  function insideQuote(){ return insideDouble || insideSingle; }
+
+  function pushBlankRow(){
+    currentRow = new Array(COLS).fill(null);
+    rows.push(currentRow);
+    col = 0;
+  }
+
+  function newParagraphRow(){
+    pushBlankRow();
+    currentRow[0] = { indent:true, blank:true };
+    col = 1;
+  }
+
+  function newWrapRow(){
+    pushBlankRow();
+    if(insideQuote()){
+      currentRow[0] = { indent:true, blank:true, quoteContinue:true };
+      col = 1;
+    }
+  }
+
+  function forceQuoteStartRow(){
+    pushBlankRow();
+    currentRow[0] = { indent:true, blank:true, quoteStart:true };
+    col = 1;
+  }
+
+  function push(cell){
+    if(col >= COLS){ newWrapRow(); }
+    currentRow[col] = cell;
+    col++;
+  }
+
+  const rawLines = rawText.replace(/\r/g,'').split('\n');
+
+  for(let rawLine of rawLines){
+    if(rawLine.trim().length === 0) continue; // blank line = paragraph separator only
+    if(/^[ \t]+/.test(rawLine)) manualIndentFound = true;
+    if(/  /.test(rawLine.trim())) doubleSpaceFound = true;
+    if(rawLine.includes('"') || rawLine.includes('“') || rawLine.includes('”')) dialogueFound = true;
+
+    const line = rawLine.trim().replace(/[ \t]{2,}/g, ' ');
+    newParagraphRow();
+
+    const tokens = tokenizeLine(line);
+    for(let ti=0; ti<tokens.length; ti++){
+      const t = tokens[ti];
+      if(t.isSpace){
+        if(col === COLS - 1){
+          if(currentRow[col-1]) currentRow[col-1].caret = true;
+          newWrapRow();
+        } else {
+          push({ blank:true });
+        }
+        continue;
+      }
+      totalChars++;
+
+      // 따옴표가 문장 중간에서 열릴 때: 줄이 아직 안 찼어도 새 줄로 바꿔 쓴다.
+      if(t.quoteToggle){
+        const opening = t.quoteToggle === 'double' ? !insideDouble : !insideSingle;
+        if(opening && col !== 1){
+          forceQuoteStartRow();
+        }
+      }
+
+      // 줄 끝 칸이 이미 꽉 차서 마침표·쉼표를 찍을 칸이 없을 때: 마지막 글자 칸에 함께 쓴다.
+      if((t.text === '.' || t.text === ',') && col === COLS &&
+         currentRow[COLS-1] && currentRow[COLS-1].text && !currentRow[COLS-1].wide){
+        currentRow[COLS-1].text += t.text;
+        currentRow[COLS-1].wide = true;
+        continue;
+      }
+
+      push({ text: t.text, wide: t.wide, ellipsis: t.ellipsis });
+      if(t.quoteToggle === 'double') insideDouble = !insideDouble;
+      if(t.quoteToggle === 'single') insideSingle = !insideSingle;
+      if(t.isEndPunct){
+        // 물음표·느낌표 바로 뒤에 닫는 따옴표가 오면 붙여 쓰고, 강제로 칸을 비우지 않는다.
+        // (따옴표는 물음표와 한 칸에 모아 쓰지 않으며, 따옴표 뒤 공백 여부는 원문 그대로 따른다.)
+        const next = tokens[ti+1];
+        const nextClosesQuote = next && next.quoteToggle &&
+          (next.quoteToggle === 'double' ? insideDouble : insideSingle);
+        if(!nextClosesQuote){
+          push({ blank:true, ruleDot:true });
+        }
+      }
+    }
+  }
+
+  return { rows, totalChars, manualIndentFound, doubleSpaceFound, dialogueFound, quoteUnclosed: insideQuote() };
+}
+
+function render(){
+  const raw = document.getElementById('input').value;
+  const { rows, totalChars, manualIndentFound, doubleSpaceFound, dialogueFound, quoteUnclosed } = layout(raw);
+
+  // Stats
+  const usedCells = rows.reduce((a,r)=> a + r.filter(c=>c).length, 0);
+  const sheetCount = Math.max(1, Math.ceil(rows.length / ROWS_PER_SHEET));
+  document.getElementById('stats').innerHTML = `
+    <div class="stat"><div class="n">${totalChars}</div><div class="l">글자 수</div></div>
+    <div class="stat"><div class="n">${usedCells}</div><div class="l">사용된 칸</div></div>
+    <div class="stat"><div class="n">${rows.length}</div><div class="l">줄</div></div>
+    <div class="stat"><div class="n">${sheetCount}</div><div class="l">매 (200자 기준)</div></div>
+  `;
+
+  // Sheets
+  const sheetsEl = document.getElementById('sheets');
+  sheetsEl.innerHTML = '';
+  if(rows.length === 0){
+    const empty = document.createElement('div');
+    empty.className = 'panel';
+    empty.style.textAlign = 'center';
+    empty.style.color = 'var(--ink-soft)';
+    empty.style.fontSize = '13px';
+    empty.innerText = '글을 입력하면 원고지가 여기에 채워집니다.';
+    sheetsEl.appendChild(empty);
+  }
+  for(let s=0; s<sheetCount; s++){
+    const sheetRows = rows.slice(s*ROWS_PER_SHEET, (s+1)*ROWS_PER_SHEET);
+    const sheetDiv = document.createElement('div');
+    sheetDiv.className = 'sheet';
+    const headDiv = document.createElement('div');
+    headDiv.className = 'sheet-head';
+    headDiv.textContent = `No. ${s+1}`;
+    sheetDiv.appendChild(headDiv);
+    if(mode === 'trace'){
+      const wrap = setupCanvasWrap(s, sheetRows);
+      sheetDiv.appendChild(wrap);
+    } else {
+      const gridDiv = document.createElement('div');
+      gridDiv.className = 'grid';
+      for(let r=0; r<ROWS_PER_SHEET; r++){
+        const rowData = sheetRows[r] || new Array(COLS).fill(null);
+        for(let c=0; c<COLS; c++){
+          const cellData = rowData[c];
+          const cellEl = document.createElement('div');
+          cellEl.className = 'cell' + (cellData && cellData.indent ? ' indent' : '');
+          if(cellData && cellData.text){
+            if(cellData.wide){
+              cellEl.innerHTML = `<span class="pair">${cellData.text}</span>`;
+            } else {
+              cellEl.textContent = cellData.text;
+            }
+          }
+          if(cellData && cellData.ruleDot){
+            const dot = document.createElement('span');
+            dot.className = 'dot';
+            cellEl.appendChild(dot);
+          }
+          if(cellData && cellData.caret){
+            const caret = document.createElement('span');
+            caret.className = 'caret';
+            caret.textContent = '∨';
+            cellEl.appendChild(caret);
+          }
+          gridDiv.appendChild(cellEl);
+        }
+      }
+      sheetDiv.appendChild(gridDiv);
+    }
+    const foot = document.createElement('div');
+    foot.className = 'sheet-foot';
+    foot.textContent = `— ${s+1}매 —`;
+    sheetDiv.appendChild(foot);
+    sheetsEl.appendChild(sheetDiv);
+  }
+
+  // Notes
+  const notes = [];
+  notes.push({
+    mark: '✓', warn:false,
+    html: '<b>문단 들여쓰기</b> — 줄바꿈마다 첫 칸을 비우고 둘째 칸부터 배치했습니다.'
+  });
+  notes.push({
+    mark: '✓', warn:false,
+    html: '<b>숫자·소문자 알파벳</b> — 두 자 이상 이어지면 한 칸에 두 자씩 묶었습니다. (대문자·로마 숫자는 한 칸에 한 자)'
+  });
+  notes.push({
+    mark: '✓', warn:false,
+    html: '<b>마침표·쉼표 다음 칸 비우지 않기</b> — 평소처럼 마침표·쉼표 뒤에 띄어쓰기를 입력해도, 원고지에는 칸을 비우지 않고 바로 이어 썼습니다.'
+  });
+  notes.push({
+    mark: '✓', warn:false,
+    html: '<b>물음표·느낌표</b> — 글자처럼 한 칸을 채우고, 바로 다음 칸을 비웠습니다. (뒤에 띄어쓰기를 입력해도 중복으로 비우지 않습니다)'
+  });
+  notes.push({
+    mark: '✓', warn:false,
+    html: '<b>줄 끝 띄어쓰기</b> — 칸이 부족하면 빈 칸 대신 줄 끝에 ∨ 표시로 처리했습니다.'
+  });
+  notes.push({
+    mark: '✓', warn:false,
+    html: '<b>따옴표 안 첫 칸 비우기</b> — 따옴표가 열려 있는 동안 줄이 바뀌면 그 줄의 첫 칸도 비웠습니다.'
+  });
+  notes.push({
+    mark: '✓', warn:false,
+    html: '<b>줄임표(……)</b> — 항상 점 6개(한 칸에 3개씩, 두 칸)로 통일하고 끝에 마침표를 찍었습니다.'
+  });
+  notes.push({
+    mark: '✓', warn:false,
+    html: '<b>줄 끝 칸 부족</b> — 마침표·쉼표를 찍을 칸이 없으면 마지막 글자 칸에 함께 썼습니다.'
+  });
+  notes.push({
+    mark: '✓', warn:false,
+    html: '<b>문장 중간에서 시작되는 따옴표</b> — 줄이 다 차지 않았어도 새 줄로 바꿔 썼습니다.'
+  });
+  notes.push({
+    mark: '✓', warn:false,
+    html: '<b>마침표·쉼표 + 따옴표</b> — 마침표·쉼표 바로 뒤에 닫는 따옴표가 오면 한 칸에 같이 배치했습니다.'
+  });
+  notes.push({
+    mark: '✓', warn:false,
+    html: '<b>페이지 번호</b> — 매 장마다 상단에 No. 표시를 매겼습니다.'
+  });
+  if(quoteUnclosed){
+    notes.unshift({
+      mark:'!', warn:true,
+      html: '<b>따옴표가 닫히지 않았어요.</b><div class="sub">여는 따옴표는 있는데 닫는 따옴표가 보이지 않아요. 원문에서 짝을 확인해 주세요.</div>'
+    });
+  }
+  if(manualIndentFound){
+    notes.unshift({
+      mark:'!', warn:true,
+      html: '<b>직접 입력한 앞공백을 감지했어요.</b><div class="sub">원고지에서는 문단 시작 칸만 비우면 되므로, 줄 앞에 스페이스나 탭을 직접 넣을 필요는 없습니다. 자동으로 정리해서 배치했습니다.</div>'
+    });
+  }
+  if(doubleSpaceFound){
+    notes.unshift({
+      mark:'!', warn:true,
+      html: '<b>이중 띄어쓰기가 있었어요.</b><div class="sub">연속된 공백은 한 칸으로 줄여서 배치했습니다. 원문도 한 번 확인해 보세요.</div>'
+    });
+  }
+  const notesEl = document.getElementById('notes');
+  notesEl.innerHTML = notes.map(n => `
+    <li class="note-item${n.warn ? ' warn' : ''}">
+      <div class="mark">${n.mark}</div>
+      <div>${n.html}</div>
+    </li>
+  `).join('');
+}
+
+document.getElementById('input').addEventListener('input', render);
+document.getElementById('input').value = '저는 어릴 적부터 글쓰기를 좋아했다. "정말 이 일을 하고 싶어?" 스스로에게 몇 번이고 물었다.\n2026년 여름, 나는 다시 원고지 앞에 앉았다.';
+
+document.getElementById('undoBtn').addEventListener('click', () => {
+  const wraps = document.querySelectorAll('#sheets .canvas-wrap');
+  for(const wrap of wraps){
+    const idx = wrap._sheetIndex;
+    if(sheetStrokes[idx] && sheetStrokes[idx].length){
+      sheetStrokes[idx].pop();
+      drawStrokes(wrap._inkCtx, sheetStrokes[idx]);
+      scheduleSave(idx);
+      break;
+    }
+  }
+});
+document.getElementById('clearBtn').addEventListener('click', () => {
+  const wraps = document.querySelectorAll('#sheets .canvas-wrap');
+  for(const wrap of wraps){
+    const idx = wrap._sheetIndex;
+    sheetStrokes[idx] = [];
+    drawStrokes(wrap._inkCtx, []);
+    scheduleSave(idx);
+  }
+});
+document.getElementById('eraserBtn').addEventListener('click', (e) => {
+  eraserOn = !eraserOn;
+  e.currentTarget.classList.toggle('active', eraserOn);
+});
+document.getElementById('widthRange').addEventListener('input', (e) => {
+  penWidth = parseFloat(e.target.value);
+});
+document.querySelectorAll('.swatch').forEach(sw => {
+  sw.addEventListener('click', () => {
+    document.querySelectorAll('.swatch').forEach(s => s.classList.remove('selected'));
+    sw.classList.add('selected');
+    penColor = sw.dataset.color;
+  });
+});
+document.getElementById('modeCheckBtn').addEventListener('click', () => {
+  mode = 'check';
+  document.getElementById('modeCheckBtn').classList.add('active');
+  document.getElementById('modeTraceBtn').classList.remove('active');
+  document.getElementById('toolbar').style.display = 'none';
+  document.getElementById('traceHint').style.display = 'none';
+  document.getElementById('notesPanel').style.display = '';
+  render();
+});
+document.getElementById('modeTraceBtn').addEventListener('click', () => {
+  mode = 'trace';
+  document.getElementById('modeTraceBtn').classList.add('active');
+  document.getElementById('modeCheckBtn').classList.remove('active');
+  document.getElementById('toolbar').style.display = 'flex';
+  document.getElementById('traceHint').style.display = 'block';
+  document.getElementById('notesPanel').style.display = 'none';
+  render();
+});
+
+render();
+</script>
+</body>
+</html>
