@@ -324,7 +324,7 @@
     <textarea id="input" placeholder="여기에 평소처럼 글을 쓰세요. 문단을 나눌 때는 Enter로 줄을 바꾸면 됩니다.
 
 예)
-나는 어릴 적부터 글쓰기를 좋아했다.
+저는 어릴 적부터 글쓰기를 좋아했다.
 2026년 여름, 나는 원고지 앞에 다시 앉았다."></textarea>
     <div class="hint">띄어쓰기·문단 구분만 평소대로 입력하면 됩니다. 첫 칸 들여쓰기, 숫자·알파벳 두 자씩 묶기, 물음표·느낌표 뒤 칸 비우기, 따옴표 안 첫 칸 비우기, 줄임표·마침표+따옴표 처리까지 자동으로 반영됩니다.</div>
   </div>
@@ -721,8 +721,12 @@ function layout(rawText){
     for(let ti=0; ti<tokens.length; ti++){
       const t = tokens[ti];
       if(t.isSpace){
-        if(col === COLS - 1){
-          if(currentRow[col-1]) currentRow[col-1].caret = true;
+        if(col >= COLS - 1){
+          // 줄 끝: 칸이 하나 남았거나(19) 이미 꽉 찼거나(20) 상관없이
+          // 띄어쓰기를 위해 칸을 만들지 않고, 마지막 글자 칸에 ∨ 표시만 남긴 뒤
+          // 다음 줄 첫 칸부터 바로 이어 쓴다.
+          const lastFilledIdx = (col === COLS) ? COLS - 1 : col - 1;
+          if(currentRow[lastFilledIdx]) currentRow[lastFilledIdx].caret = true;
           newWrapRow();
         } else {
           push({ blank:true });
