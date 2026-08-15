@@ -672,7 +672,8 @@ function layout(rawText){
   let insideDouble = false;
   let insideSingle = false;
 
-  function insideQuote(){ return insideDouble || insideSingle; }
+  function insideDialogueQuote(){ return insideDouble; } // 줄바꿈·들여쓰기 지속은 대화문(큰따옴표)에만 적용
+  function insideQuote(){ return insideDouble || insideSingle; } // 미닫힘 경고용 (강조 작은따옴표 포함)
 
   function pushBlankRow(){
     currentRow = new Array(COLS).fill(null);
@@ -688,7 +689,7 @@ function layout(rawText){
 
   function newWrapRow(){
     pushBlankRow();
-    if(insideQuote()){
+    if(insideDialogueQuote()){
       currentRow[0] = { indent:true, blank:true, quoteContinue:true };
       col = 1;
     }
@@ -735,9 +736,10 @@ function layout(rawText){
       }
       totalChars++;
 
-      // 따옴표가 문장 중간에서 열릴 때: 줄이 아직 안 찼어도 새 줄로 바꿔 쓴다.
-      if(t.quoteToggle){
-        const opening = t.quoteToggle === 'double' ? !insideDouble : !insideSingle;
+      // 큰따옴표(대화문)가 문장 중간에서 열릴 때만 줄을 바꿔 쓴다.
+      // 작은따옴표는 문장 안에서 강조하는 용도이므로 줄바꿈 없이 그대로 이어 쓴다.
+      if(t.quoteToggle === 'double'){
+        const opening = !insideDouble;
         if(opening && col !== 1){
           forceQuoteStartRow();
         }
@@ -870,7 +872,7 @@ function render(){
   });
   notes.push({
     mark: '✓', warn:false,
-    html: '<b>따옴표 안 첫 칸 비우기</b> — 따옴표가 열려 있는 동안 줄이 바뀌면 그 줄의 첫 칸도 비웠습니다.'
+    html: '<b>따옴표 안 첫 칸 비우기</b> — 대화문(큰따옴표)이 열려 있는 동안 줄이 바뀌면 그 줄의 첫 칸도 비웠습니다. (문장 안 강조용 작은따옴표는 줄바꿈 없이 그대로 이어 씁니다)'
   });
   notes.push({
     mark: '✓', warn:false,
@@ -882,7 +884,7 @@ function render(){
   });
   notes.push({
     mark: '✓', warn:false,
-    html: '<b>문장 중간에서 시작되는 따옴표</b> — 줄이 다 차지 않았어도 새 줄로 바꿔 썼습니다.'
+    html: '<b>문장 중간에서 시작되는 대화문(큰따옴표)</b> — 줄이 다 차지 않았어도 새 줄로 바꿔 썼습니다.'
   });
   notes.push({
     mark: '✓', warn:false,
